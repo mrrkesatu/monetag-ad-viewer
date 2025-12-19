@@ -129,6 +129,10 @@
             background: rgba(244, 67, 54, 0.3);
         }
         
+        .status.warning {
+            background: rgba(255, 193, 7, 0.3);
+        }
+        
         .loader {
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid white;
@@ -149,6 +153,23 @@
             margin-top: 20px;
             font-size: 13px;
             opacity: 0.8;
+        }
+
+        .debug-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 11px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .debug-info pre {
+            margin: 5px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -182,9 +203,12 @@
         <div id="status" class="status"></div>
         
         <div class="file-info" id="fileInfo"></div>
+
+        <!-- Debug info -->
+        <div class="debug-info" id="debugInfo"></div>
     </div>
 
-  <script>
+<script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
@@ -198,102 +222,180 @@ const watchBtn = document.getElementById('watchBtn');
 const statusDiv = document.getElementById('status');
 const loader = document.getElementById('loader');
 const fileInfo = document.getElementById('fileInfo');
+const debugInfo = document.getElementById('debugInfo');
+
+let debugLogs = [];
+
+function addDebugLog(msg) {
+  const timestamp = new Date().toLocaleTimeString();
+  debugLogs.push(`[${timestamp}] ${msg}`);
+  debugInfo.innerHTML = '<pre>' + debugLogs.slice(-15).join('\n') + '</pre>';
+  console.log(`[${timestamp}] ${msg}`);
+}
 
 watchBtn.disabled = true;
 watchBtn.textContent = '⏳ Preparing ad...';
 
+// Validasi parameter
 if (!userId || !fileHash || !botUrl) {
   showStatus('❌ Invalid parameters', 'error');
-  return;
+  addDebugLog('ERROR: Missing parameters');
+  addDebugLog(`userId: ${userId || 'MISSING'}`);
+  addDebugLog(`fileHash: ${fileHash || 'MISSING'}`);
+  addDebugLog(`botUrl: ${botUrl || 'MISSING'}`);
+} else {
+  fileInfo.innerHTML = `User ID: ${userId}<br>Preparing ad...`;
+  addDebugLog(`✓ Parameters OK`);
+  addDebugLog(`User: ${userId}`);
 }
-
-fileInfo.innerHTML = `User ID: ${userId}<br>Preparing ad...`;
 
 function showStatus(msg, type) {
   statusDiv.textContent = msg;
   statusDiv.className = 'status show';
   if (type) statusDiv.classList.add(type);
+  addDebugLog(`Status: ${msg}`);
 }
 
-// WAIT SDK READY
+// Tunggu SDK siap
 function waitForMonetag() {
   return new Promise((resolve, reject) => {
+    addDebugLog('Waiting for Monetag SDK...');
     let attempts = 0;
+    
     const timer = setInterval(() => {
+      attempts++;
+      
       if (typeof window.show_10348819 === 'function') {
         clearInterval(timer);
+        addDebugLog(`✓ SDK loaded after ${attempts} attempts`);
         resolve();
       }
-      if (++attempts > 30) {
+      
+      if (attempts > 40) { // 20 detik timeout
         clearInterval(timer);
-        reject('SDK not loaded');
+        addDebugLog(`✗ SDK timeout after ${attempts} attempts`);
+        addDebugLog(`window.show_10348819 type: ${typeof window.show_10348819}`);
+        reject(new Error('SDK not loaded'));
       }
     }, 500);
   });
 }
 
-// PRELOAD
-async function preloadAd() {
-  showStatus('⏳ Loading advertisement...', '');
-  await show_10348819({
-    type: 'preload',
-    ymid: userId
-  });
-}
-
-// INIT FLOW
+// Main initialization
 (async () => {
   try {
+    addDebugLog('=== INITIALIZATION START ===');
+    
+    // Tunggu SDK
     await waitForMonetag();
+    
+    // Delay untuk Telegram environment
+    addDebugLog('Waiting for Telegram environment...');
+    await new Promise(r => setTimeout(r, 2000));
 
-    // delay WAJIB di Telegram
-    await new Promise(r => setTimeout(r, 1500));
-
-    await preloadAd();
-
-    showStatus('✅ Ad ready! Click to watch.', 'success');
-    watchBtn.disabled = false;
-    watchBtn.textContent = '📺 Watch Ad Now';
+    // Preload ad dengan promise handling yang benar
+    addDebugLog('Starting ad preload...');
+    showStatus('⏳ Loading advertisement...', '');
+    
+    show_10348819({ 
+      type: 'preload', 
+      ymid: userId 
+    })
+    .then(() => {
+      addDebugLog('✓✓✓ Preload SUCCESS');
+      showStatus('✅ Ad ready! Click to watch.', 'success');
+      watchBtn.disabled = false;
+      watchBtn.textContent = '📺 Watch Ad Now';
+    })
+    .catch((error) => {
+      addDebugLog(`✗✗✗ Preload FAILED`);
+      addDebugLog(`Error: ${error?.message || error || 'Unknown error'}`);
+      addDebugLog(`Error type: ${typeof error}`);
+      
+      showStatus('⚠️ Ad may not be available. Try clicking anyway.', 'warning');
+      watchBtn.disabled = false;
+      watchBtn.textContent = '📺 Try Watch Ad';
+    });
 
   } catch (err) {
-    console.error(err);
-    showStatus('❌ No ads available. Please try later.', 'error');
+    addDebugLog(`✗ Init error: ${err.message || err}`);
+    showStatus('❌ Failed to initialize. Please refresh the page.', 'error');
+    watchBtn.disabled = true;
+    watchBtn.textContent = '❌ Ad Not Available';
   }
 })();
 
-// SHOW AD
+// Show ad on button click
 watchBtn.addEventListener('click', async () => {
   watchBtn.disabled = true;
   watchBtn.textContent = '📺 Showing ad...';
+  addDebugLog('=== USER CLICKED WATCH BUTTON ===');
+
+  if (typeof window.show_10348819 !== 'function') {
+    addDebugLog('✗ SDK function not available');
+    showStatus('❌ SDK not loaded', 'error');
+    watchBtn.disabled = false;
+    watchBtn.textContent = '📺 Watch Ad Now';
+    return;
+  }
 
   try {
-    await show_10348819({
-      ymid: userId
-    });
-
-    onAdComplete();
+    addDebugLog('Calling show_10348819...');
+    
+    show_10348819({ ymid: userId })
+      .then(() => {
+        addDebugLog('✓✓✓ Ad COMPLETED successfully');
+        onAdComplete();
+      })
+      .catch((error) => {
+        addDebugLog(`✗✗✗ Ad show FAILED`);
+        addDebugLog(`Error: ${error?.message || error || 'Unknown'}`);
+        addDebugLog(`Error type: ${typeof error}`);
+        
+        showStatus('❌ Ad was skipped or failed. Please try again.', 'error');
+        watchBtn.disabled = false;
+        watchBtn.textContent = '📺 Watch Ad Now';
+      });
 
   } catch (err) {
-    console.error(err);
-    showStatus('❌ Ad not completed.', 'error');
+    addDebugLog(`✗ Exception: ${err.message || err}`);
+    showStatus('❌ Unexpected error. Please try again.', 'error');
     watchBtn.disabled = false;
     watchBtn.textContent = '📺 Watch Ad Now';
   }
 });
 
 async function onAdComplete() {
+  addDebugLog('=== AD COMPLETE - SENDING FILE ===');
   showStatus('✅ Ad watched! Sending file...', 'success');
   loader.style.display = 'block';
 
   try {
-    const res = await fetch(`${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`);
-    if (!res.ok) throw new Error();
+    const url = `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`;
+    addDebugLog(`Calling backend: ${url}`);
+    
+    const res = await fetch(url);
+    
+    addDebugLog(`Response status: ${res.status}`);
+    
+    if (!res.ok) {
+      throw new Error(`Server returned ${res.status}`);
+    }
 
+    const responseText = await res.text();
+    addDebugLog(`Response: ${responseText.substring(0, 100)}`);
+    
+    addDebugLog('✓✓✓ File sent successfully');
     showStatus('✅ File sent to your chat!', 'success');
-    setTimeout(() => tg.close(), 2000);
+    
+    setTimeout(() => {
+      addDebugLog('Closing Telegram WebApp...');
+      tg.close();
+    }, 2500);
 
-  } catch {
-    showStatus('❌ Failed to send file.', 'error');
+  } catch (err) {
+    addDebugLog(`✗ Backend error: ${err.message}`);
+    showStatus('❌ Failed to send file. Please contact support.', 'error');
   } finally {
     loader.style.display = 'none';
   }
