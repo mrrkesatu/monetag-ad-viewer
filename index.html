@@ -184,110 +184,106 @@
         <div class="file-info" id="fileInfo"></div>
     </div>
 
-    <script>
-        // Initialize Telegram Web App
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userId');
-        const fileHash = urlParams.get('fileHash');
-        const botUrl = urlParams.get('botUrl');
-        
-        // Elements
-        const watchBtn = document.getElementById('watchBtn');
-        const statusDiv = document.getElementById('status');
-        const loader = document.getElementById('loader');
-        const fileInfo = document.getElementById('fileInfo');
-        
-        // Validate parameters
-        if (!userId || !fileHash || !botUrl) {
-            showStatus('❌ Invalid parameters', 'error');
-            watchBtn.disabled = true;
-        } else {
-            fileInfo.innerHTML = `User ID: ${userId}<br>Ready to unlock file`;
-        }
-        
-        // Watch Ad button click
-        watchBtn.addEventListener('click', () => {
-            watchBtn.disabled = true;
-            watchBtn.textContent = '⏳ Loading ad...';
-            showStatus('Loading advertisement...', '');
-            
-            try {
-                // Call Monetag Rewarded Interstitial
-                // Format dari Monetag: show_10348819().then(() => { reward user })
-                show_10348819().then(() => {
-                    // User sudah nonton ad, sekarang kirim reward
-                    console.log('Ad watched successfully!');
-                    onAdComplete();
-                }).catch((error) => {
-                    console.error('Ad error:', error);
-                    showStatus('❌ Error loading ad. Please try again.', 'error');
-                    watchBtn.disabled = false;
-                    watchBtn.textContent = '📺 Watch Ad Now';
-                });
-                
-            } catch (error) {
-                console.error('Ad error:', error);
-                showStatus('❌ Error loading ad. Please try again.', 'error');
-                watchBtn.disabled = false;
-                watchBtn.textContent = '📺 Watch Ad Now';
-            }
-        });
-        
-        // Function called after ad is watched
-        async function onAdComplete() {
-            showStatus('✅ Ad watched! Sending file...', 'success');
-            loader.style.display = 'block';
-            
-            try {
-                // Notify bot that ad is complete
-                const response = await fetch(`${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`);
-                
-                if (response.ok) {
-                    showStatus('✅ Success! File sent to your chat!', 'success');
-                    
-                    // Close Web App after 2 seconds
-                    setTimeout(() => {
-                        tg.close();
-                    }, 2000);
-                } else {
-                    throw new Error('Failed to send file');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showStatus('❌ Error sending file. Please contact support.', 'error');
-            } finally {
-                loader.style.display = 'none';
-            }
-        }
-        
-        // Show status message
-        function showStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = 'status show';
-            if (type) statusDiv.classList.add(type);
-        }
-        
-        // Handle Monetag function not loaded
-        if (typeof show_10348819 === 'undefined') {
-            // Fallback: define mock function for testing
-            window.show_10348819 = function() {
-                return new Promise((resolve) => {
-                    console.log('Mock ad shown (Monetag script not loaded)');
-                    // Simulate 3 second ad for testing
-                    setTimeout(() => {
-                        console.log('Mock ad completed');
-                        resolve();
-                    }, 3000);
-                });
-            };
-            
-            console.warn('Monetag script not loaded. Using mock function for testing.');
-        }
-    </script>
+   <script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+tg.ready();
+
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('userId');
+const fileHash = urlParams.get('fileHash');
+const botUrl = urlParams.get('botUrl');
+
+const watchBtn = document.getElementById('watchBtn');
+const statusDiv = document.getElementById('status');
+const loader = document.getElementById('loader');
+const fileInfo = document.getElementById('fileInfo');
+
+if (!userId || !fileHash || !botUrl) {
+  showStatus('❌ Invalid parameters', 'error');
+  watchBtn.disabled = true;
+} else {
+  fileInfo.innerHTML = `User ID: ${userId}<br>Ready to unlock file`;
+}
+
+let monetagReady = false;
+
+// tunggu SDK Monetag siap
+function waitForMonetag() {
+  return new Promise((resolve, reject) => {
+    let tries = 0;
+    const timer = setInterval(() => {
+      if (typeof window.show_10348819 === 'function') {
+        clearInterval(timer);
+        monetagReady = true;
+        resolve();
+      }
+      if (++tries > 20) {
+        clearInterval(timer);
+        reject('Monetag SDK not loaded');
+      }
+    }, 500);
+  });
+}
+
+// preload iklan
+async function preloadAd() {
+  await show_10348819({
+    type: 'preload',
+    ymid: userId
+  });
+}
+
+watchBtn.addEventListener('click', async () => {
+  watchBtn.disabled = true;
+  watchBtn.textContent = '⏳ Loading ad...';
+  showStatus('Preparing advertisement...', '');
+
+  try {
+    if (!monetagReady) {
+      await waitForMonetag();
+    }
+
+    await preloadAd();
+
+    await show_10348819({
+      ymid: userId
+    });
+
+    // iklan selesai
+    onAdComplete();
+
+  } catch (err) {
+    console.error(err);
+    showStatus('❌ No ads available. Please try again later.', 'error');
+    watchBtn.disabled = false;
+    watchBtn.textContent = '📺 Watch Ad Now';
+  }
+});
+
+async function onAdComplete() {
+  showStatus('✅ Ad watched! Sending file...', 'success');
+  loader.style.display = 'block';
+
+  try {
+    const res = await fetch(`${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`);
+    if (!res.ok) throw new Error();
+
+    showStatus('✅ File sent to your Telegram chat!', 'success');
+    setTimeout(() => tg.close(), 2000);
+
+  } catch {
+    showStatus('❌ Failed to send file', 'error');
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+function showStatus(msg, type) {
+  statusDiv.textContent = msg;
+  statusDiv.className = 'status show';
+  if (type) statusDiv.classList.add(type);
+}
+</script>
 </body>
 </html>
