@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch Ad to Unlock - Diagnostic</title>
+    <title>Watch Ad to Unlock</title>
     
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -31,108 +31,97 @@
         
         .container {
             text-align: center;
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
         }
         
         .icon {
-            font-size: 60px;
-            margin-bottom: 15px;
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         h1 {
-            font-size: 22px;
-            margin-bottom: 8px;
+            font-size: 24px;
+            margin-bottom: 10px;
             font-weight: 600;
         }
         
         .subtitle {
-            font-size: 14px;
+            font-size: 16px;
             opacity: 0.9;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         
-        .diagnostic-box {
-            background: rgba(0, 0, 0, 0.3);
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: left;
-            font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
-        .diagnostic-item {
+        .info-item {
             display: flex;
-            align-items: flex-start;
-            margin: 8px 0;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 14px;
         }
         
-        .diagnostic-item.success {
-            border-left: 3px solid #4CAF50;
-        }
-        
-        .diagnostic-item.error {
-            border-left: 3px solid #f44336;
-        }
-        
-        .diagnostic-item.warning {
-            border-left: 3px solid #FF9800;
-        }
-        
-        .diagnostic-item.info {
-            border-left: 3px solid #2196F3;
-        }
-        
-        .diagnostic-icon {
-            margin-right: 8px;
-            min-width: 20px;
-        }
-        
-        .diagnostic-text {
-            flex: 1;
-            word-break: break-word;
+        .info-item span {
+            margin-left: 8px;
         }
         
         .watch-button {
             background: linear-gradient(135deg, #FF6B6B, #FF8E53);
             color: white;
             border: none;
-            padding: 16px 35px;
+            padding: 18px 40px;
             border-radius: 50px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            margin: 10px 5px;
+            margin-bottom: 20px;
             width: 100%;
-            max-width: 280px;
+            max-width: 300px;
+        }
+        
+        .watch-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        
+        .watch-button:active {
+            transform: translateY(0);
         }
         
         .watch-button:disabled {
-            background: linear-gradient(135deg, #999, #666);
+            background: linear-gradient(135deg, #ccc, #999);
             cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        .refresh-button {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            font-size: 14px;
-            padding: 12px 25px;
+            opacity: 0.7;
+            transform: none;
         }
         
         .status {
-            font-size: 13px;
-            margin-top: 15px;
-            padding: 12px;
+            font-size: 14px;
+            margin-top: 20px;
+            padding: 15px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
         }
         
         .status.success {
@@ -143,14 +132,18 @@
             background: rgba(244, 67, 54, 0.3);
         }
         
+        .status.warning {
+            background: rgba(255, 193, 7, 0.3);
+        }
+        
         .loader {
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid white;
             border-radius: 50%;
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 15px auto;
+            margin: 20px auto;
             display: none;
         }
         
@@ -158,282 +151,370 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .file-info {
+            margin-top: 20px;
+            font-size: 13px;
+            opacity: 0.8;
+        }
 
-        .copy-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            margin-top: 10px;
+        .progress-text {
+            font-size: 13px;
+            margin-top: 15px;
+            opacity: 0.9;
+        }
+
+        .instruction {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .instruction strong {
+            color: #FFD700;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">🔍</div>
-        <h1>Ad System Diagnostic</h1>
-        <p class="subtitle">Checking what's preventing the ad from loading...</p>
+        <div class="icon">📺</div>
+        <h1>Watch Ad to Unlock</h1>
+        <p class="subtitle">Get your file for free by watching a short advertisement</p>
         
-        <div class="diagnostic-box" id="diagnosticBox">
-            <div class="diagnostic-item info">
-                <span class="diagnostic-icon">⏳</span>
-                <span class="diagnostic-text">Starting diagnostic...</span>
+        <div class="info-box">
+            <div class="info-item">
+                <span>⏱️</span>
+                <span>Watch for 15 seconds</span>
+            </div>
+            <div class="info-item">
+                <span>▶️</span>
+                <span>Click Continue when ready</span>
+            </div>
+            <div class="info-item">
+                <span>🎁</span>
+                <span>File sent automatically</span>
             </div>
         </div>
         
         <button id="watchBtn" class="watch-button" disabled>
-            ⏳ Initializing...
-        </button>
-
-        <button id="refreshBtn" class="watch-button refresh-button" onclick="location.reload()">
-            🔄 Refresh & Retry
+            ⏳ Loading ad...
         </button>
         
         <div class="loader" id="loader"></div>
         
-        <div id="status" class="status" style="display: none;"></div>
-
-        <button class="copy-btn" onclick="copyDiagnostic()">📋 Copy Diagnostic Info</button>
+        <div id="status" class="status"></div>
+        
+        <p class="progress-text" id="progressText">Initializing...</p>
+        
+        <div class="instruction">
+            <strong>📌 How to complete:</strong><br>
+            1. Click "Watch Ad Now"<br>
+            2. Wait 15 seconds<br>
+            3. <strong>Click "Continue" button</strong> in the ad<br>
+            4. Wait for confirmation<br>
+            5. File will be sent to your chat
+        </div>
+        
+        <div class="file-info" id="fileInfo"></div>
     </div>
 
 <script>
-// Diagnostic logs
-const diagnostics = [];
+// ===== INIT TELEGRAM =====
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
 
-function addDiagnostic(type, message, detail = '') {
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
-    };
-    
-    const time = new Date().toLocaleTimeString();
-    diagnostics.push({ type, message, detail, time });
-    
-    const box = document.getElementById('diagnosticBox');
-    const item = document.createElement('div');
-    item.className = `diagnostic-item ${type}`;
-    item.innerHTML = `
-        <span class="diagnostic-icon">${icons[type]}</span>
-        <span class="diagnostic-text">
-            <strong>[${time}]</strong> ${message}
-            ${detail ? `<br><small style="opacity: 0.8">${detail}</small>` : ''}
-        </span>
-    `;
-    box.appendChild(item);
-    box.scrollTop = box.scrollHeight;
-    
-    console.log(`[${type.toUpperCase()}] ${message}`, detail);
-}
+console.log('✓ Telegram initialized');
 
-function copyDiagnostic() {
-    const text = diagnostics.map(d => 
-        `[${d.time}] [${d.type.toUpperCase()}] ${d.message}${d.detail ? '\n  → ' + d.detail : ''}`
-    ).join('\n');
-    
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text);
-        alert('Diagnostic info copied! Send this to support.');
-    } else {
-        prompt('Copy this diagnostic info:', text);
-    }
-}
-
-// Get elements
-const watchBtn = document.getElementById('watchBtn');
-const statusDiv = document.getElementById('status');
-const loader = document.getElementById('loader');
-
-// Get parameters
+// ===== GET PARAMETERS =====
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('userId');
 const fileHash = urlParams.get('fileHash');
 const botUrl = urlParams.get('botUrl');
 
-function showStatus(msg, type) {
-    statusDiv.textContent = msg;
-    statusDiv.className = `status ${type}`;
-    statusDiv.style.display = 'block';
+// ===== DOM ELEMENTS =====
+const watchBtn = document.getElementById('watchBtn');
+const statusDiv = document.getElementById('status');
+const loader = document.getElementById('loader');
+const fileInfo = document.getElementById('fileInfo');
+const progressText = document.getElementById('progressText');
+
+// ===== STATE =====
+let adWatchStartTime = null;
+let adCompletionChecked = false;
+
+// ===== VALIDATE PARAMETERS =====
+if (!userId || !fileHash || !botUrl) {
+    showStatus('❌ Invalid parameters. Please restart from bot.', 'error');
+    progressText.textContent = '❌ Missing required parameters';
+    console.error('Missing params:', { userId, fileHash, botUrl });
+} else {
+    fileInfo.innerHTML = `User ID: ${userId}`;
+    console.log('✓ Parameters OK');
 }
 
-// ===== START DIAGNOSTIC =====
-(async function runDiagnostic() {
-    try {
-        addDiagnostic('info', 'Starting comprehensive diagnostic...');
+function showStatus(msg, type) {
+    statusDiv.textContent = msg;
+    statusDiv.className = 'status show';
+    if (type) statusDiv.classList.add(type);
+}
+
+function updateProgress(text) {
+    progressText.textContent = text;
+    console.log('Progress:', text);
+}
+
+// ===== WAIT FOR SDK =====
+function waitForSDK() {
+    return new Promise((resolve, reject) => {
+        updateProgress('⏳ Loading Monetag SDK...');
         
-        // TEST 1: Check Telegram WebApp
-        addDiagnostic('info', 'TEST 1: Checking Telegram WebApp...');
-        if (typeof window.Telegram === 'undefined') {
-            addDiagnostic('error', 'Telegram WebApp SDK not found!', 'Make sure you open this in Telegram, not a regular browser');
-            throw new Error('Not in Telegram environment');
-        }
-        
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        
-        addDiagnostic('success', 'Telegram WebApp initialized', `Version: ${tg.version || 'unknown'}, Platform: ${tg.platform || 'unknown'}`);
-        
-        // TEST 2: Check Parameters
-        addDiagnostic('info', 'TEST 2: Validating parameters...');
-        if (!userId || !fileHash || !botUrl) {
-            addDiagnostic('error', 'Missing required parameters!', `userId: ${userId || 'MISSING'}, fileHash: ${fileHash || 'MISSING'}, botUrl: ${botUrl || 'MISSING'}`);
-            throw new Error('Invalid parameters');
-        }
-        addDiagnostic('success', 'All parameters present', `User ID: ${userId}`);
-        
-        // TEST 3: Check Network Access to libtl.com
-        addDiagnostic('info', 'TEST 3: Testing network access to libtl.com...');
-        try {
-            const testFetch = await fetch('https://libtl.com/sdk.js', { method: 'HEAD', mode: 'no-cors' });
-            addDiagnostic('success', 'Network access OK', 'libtl.com is reachable');
-        } catch (err) {
-            addDiagnostic('error', 'Cannot reach libtl.com!', 'Network blocked or unavailable. This is the main issue!');
-            addDiagnostic('warning', 'DIAGNOSIS: Telegram WebApp is blocking libtl.com', 'Solution: Use SDK proxy or external browser method');
-            throw new Error('Network blocked');
-        }
-        
-        // TEST 4: Wait for SDK to load
-        addDiagnostic('info', 'TEST 4: Waiting for Monetag SDK to load...');
-        let sdkLoaded = false;
         let attempts = 0;
+        const maxAttempts = 60;
         
-        while (attempts < 60 && !sdkLoaded) {
+        const checkInterval = setInterval(() => {
             attempts++;
-            if (typeof window.show_10348819 === 'function') {
-                sdkLoaded = true;
-                addDiagnostic('success', `SDK loaded successfully after ${attempts * 0.5}s`);
-            } else {
-                if (attempts % 10 === 0) {
-                    addDiagnostic('info', `Still waiting... (${attempts * 0.5}s elapsed)`);
-                }
-                await new Promise(r => setTimeout(r, 500));
-            }
-        }
-        
-        if (!sdkLoaded) {
-            addDiagnostic('error', 'SDK failed to load after 30 seconds!', 'The show_10348819 function is not available');
-            addDiagnostic('warning', 'Possible causes:', '1. Zone ID incorrect\n2. SDK script blocked\n3. Network issues');
-            throw new Error('SDK timeout');
-        }
-        
-        // TEST 5: Environment delay
-        addDiagnostic('info', 'TEST 5: Preparing Telegram environment...');
-        await new Promise(r => setTimeout(r, 2000));
-        addDiagnostic('success', 'Environment ready');
-        
-        // TEST 6: Try preload
-        addDiagnostic('info', 'TEST 6: Attempting ad preload...');
-        try {
-            await show_10348819({ 
-                type: 'preload',
-                ymid: userId 
-            }).then(() => {
-                addDiagnostic('success', '🎉 PRELOAD SUCCESSFUL!', 'Ad is ready to be shown');
-                watchBtn.disabled = false;
-                watchBtn.textContent = '📺 Watch Ad Now';
-                showStatus('✅ All tests passed! Ad is ready.', 'success');
-            }).catch((preloadError) => {
-                addDiagnostic('warning', 'Preload failed but SDK works', `Error: ${preloadError.message || preloadError}`);
-                addDiagnostic('info', 'Possible reason: No ad inventory available for your region');
-                watchBtn.disabled = false;
-                watchBtn.textContent = '📺 Try Watch Ad';
-                showStatus('⚠️ Preload failed, but you can try watching.', 'warning');
-            });
             
-        } catch (preloadError) {
-            addDiagnostic('error', 'Preload failed!', `${preloadError.message || preloadError}`);
-            throw preloadError;
-        }
+            if (typeof window.show_10348819 === 'function') {
+                clearInterval(checkInterval);
+                console.log(`✓ SDK loaded after ${attempts * 0.5}s`);
+                updateProgress('✓ SDK loaded');
+                resolve();
+            }
+            
+            if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.error('✗ SDK timeout');
+                updateProgress('❌ SDK failed to load');
+                reject(new Error('SDK not loaded'));
+            }
+        }, 500);
+    });
+}
+
+// ===== PRELOAD AD =====
+async function preloadAd() {
+    updateProgress('⏳ Preparing advertisement...');
+    console.log('Starting preload...');
+    
+    try {
+        await show_10348819({ 
+            type: 'preload',
+            ymid: userId
+        });
         
-        addDiagnostic('success', '✅ DIAGNOSTIC COMPLETE - Ready to show ad!');
+        console.log('✓ Preload success');
+        updateProgress('✅ Ad ready!');
+        return true;
         
     } catch (error) {
-        addDiagnostic('error', '❌ DIAGNOSTIC FAILED', `Error: ${error.message}`);
+        console.warn('Preload failed:', error);
+        updateProgress('⚠️ Preload failed, trying anyway...');
+        return false;
+    }
+}
+
+// ===== MAIN INIT =====
+(async function init() {
+    try {
+        console.log('=== INITIALIZATION ===');
         
-        // Provide specific solutions based on error
-        if (error.message.includes('Telegram environment')) {
-            addDiagnostic('error', '🔧 SOLUTION:', 'Open this page inside Telegram app, not in a regular browser');
-        } else if (error.message.includes('Network blocked')) {
-            addDiagnostic('error', '🔧 SOLUTION:', 'Use SDK proxy method or external browser solution');
-        } else if (error.message.includes('SDK timeout')) {
-            addDiagnostic('error', '🔧 SOLUTION:', 'Check if zone ID 10348819 is correct and active in Monetag dashboard');
-        } else if (error.message.includes('parameters')) {
-            addDiagnostic('error', '🔧 SOLUTION:', 'Make sure you open this from the bot with proper URL parameters');
-        }
+        // Wait for SDK
+        await waitForSDK();
         
-        watchBtn.textContent = '❌ Ad System Failed';
-        showStatus(`❌ Initialization failed: ${error.message}`, 'error');
+        // Delay for Telegram
+        updateProgress('⏳ Preparing environment...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Preload
+        await preloadAd();
+        
+        // Enable button
+        await new Promise(resolve => setTimeout(resolve, 500));
+        watchBtn.disabled = false;
+        watchBtn.textContent = '📺 Watch Ad Now';
+        showStatus('✅ Ready! Click button to watch ad.', 'success');
+        updateProgress('✅ Click "Watch Ad Now" to start');
+        
+        console.log('✓ Init complete');
+        
+    } catch (error) {
+        console.error('Init error:', error);
+        watchBtn.textContent = '❌ Ad Not Available';
+        showStatus('❌ Failed to initialize. Please contact support.', 'error');
+        updateProgress('❌ Initialization failed');
     }
 })();
 
-// Watch ad button click handler
+// ===== WATCH AD (WITH PROPER ERROR HANDLING) =====
 watchBtn.addEventListener('click', async function() {
-    addDiagnostic('info', '👆 User clicked Watch Ad button');
+    console.log('=== USER CLICKED WATCH AD ===');
     
     watchBtn.disabled = true;
-    watchBtn.textContent = '📺 Showing ad...';
+    watchBtn.textContent = '📺 Loading ad...';
+    updateProgress('📺 Opening advertisement...');
+    adCompletionChecked = false;
     
     if (typeof window.show_10348819 !== 'function') {
-        addDiagnostic('error', 'SDK function not available!');
-        showStatus('❌ SDK not available', 'error');
+        console.error('✗ SDK not available');
+        showStatus('❌ SDK error. Please refresh.', 'error');
         watchBtn.disabled = false;
         watchBtn.textContent = '📺 Watch Ad Now';
         return;
     }
     
     try {
-        addDiagnostic('info', 'Calling show_10348819()...');
+        console.log('Calling show_10348819...');
+        adWatchStartTime = Date.now();
         
-        await show_10348819({ ymid: userId }).then(() => {
-            addDiagnostic('success', '✅ AD COMPLETED!');
-            onAdComplete();
+        // IMPORTANT: Gunakan type: 'start' untuk resolve saat ad dimulai
+        // Bukan 'end' yang menunggu user close ad
+        const adPromise = show_10348819({ 
+            type: 'start',  // Resolve when ad STARTS, not when it ends
+            ymid: userId 
+        });
+        
+        // Update UI saat ad dimulai
+        watchBtn.textContent = '👀 Watching ad...';
+        showStatus('👀 Please watch the ad completely and click Continue', 'warning');
+        updateProgress('⏳ Ad is playing... Watch for 15s then click Continue');
+        
+        await adPromise.then(() => {
+            console.log('✓ Ad started successfully');
+            // Ad dimulai, sekarang kita tunggu verifikasi dari backend
+            waitForAdVerification();
         }).catch((error) => {
-            addDiagnostic('error', 'Ad was not completed', `${error.message || error}`);
+            console.error('✗ Ad start failed:', error);
             throw error;
         });
         
     } catch (error) {
-        addDiagnostic('error', 'Failed to show ad', `${error.message || error}`);
-        showStatus('❌ Ad was not completed', 'error');
-        watchBtn.disabled = false;
-        watchBtn.textContent = '📺 Watch Ad Now';
+        console.error('Watch ad error:', error);
+        
+        // Check jika user sudah nonton cukup lama (>15 detik)
+        const watchDuration = adWatchStartTime ? (Date.now() - adWatchStartTime) / 1000 : 0;
+        console.log(`Watch duration: ${watchDuration}s`);
+        
+        if (watchDuration >= 15 && !adCompletionChecked) {
+            // User mungkin sudah nonton cukup, coba verifikasi
+            console.log('User watched for 15s+, trying verification...');
+            waitForAdVerification();
+        } else {
+            // Gagal terlalu cepat
+            showStatus('❌ Ad was not completed properly. Please try again.', 'error');
+            updateProgress('❌ Ad not completed');
+            watchBtn.disabled = false;
+            watchBtn.textContent = '📺 Watch Ad Now';
+        }
     }
 });
 
-// Send file after ad complete
+// ===== TUNGGU VERIFIKASI DARI BACKEND =====
+function waitForAdVerification() {
+    console.log('=== WAITING FOR AD VERIFICATION ===');
+    adCompletionChecked = true;
+    
+    showStatus('⏳ Verifying ad completion...', 'warning');
+    updateProgress('⏳ Verifying... This may take a moment');
+    loader.style.display = 'block';
+    watchBtn.textContent = '⏳ Verifying...';
+    
+    let attempts = 0;
+    const maxAttempts = 20; // 20 seconds
+    
+    const checkInterval = setInterval(async () => {
+        attempts++;
+        console.log(`Verification attempt ${attempts}/${maxAttempts}`);
+        
+        try {
+            // Check dengan backend apakah ad sudah dikonfirmasi
+            const response = await fetch(`${botUrl}/check-ad-completion?userId=${userId}&fileHash=${fileHash}`, {
+                method: 'GET'
+            });
+            
+            const data = await response.json();
+            console.log('Backend response:', data);
+            
+            if (data.completed === true) {
+                // Ad berhasil dikonfirmasi!
+                clearInterval(checkInterval);
+                console.log('✓✓✓ AD VERIFIED!');
+                onAdComplete();
+            } else if (attempts >= maxAttempts) {
+                // Timeout, tapi tetap coba kirim file
+                clearInterval(checkInterval);
+                console.warn('Verification timeout, trying to send file anyway...');
+                onAdComplete();
+            }
+            
+        } catch (error) {
+            console.error('Verification check error:', error);
+            
+            if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('Verification failed, but trying to send file...');
+                onAdComplete();
+            }
+        }
+    }, 1000); // Check every 1 second
+}
+
+// ===== SEND FILE =====
 async function onAdComplete() {
-    addDiagnostic('info', '📤 Sending file to user...');
+    console.log('=== SENDING FILE ===');
+    
     showStatus('✅ Ad completed! Sending file...', 'success');
+    updateProgress('📤 Sending your file...');
     loader.style.display = 'block';
     
     try {
         const url = `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`;
-        const response = await fetch(url);
+        console.log('Calling:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET'
+        });
         
         if (!response.ok) {
-            throw new Error(`Server returned ${response.status}`);
+            throw new Error(`Server error: ${response.status}`);
         }
         
-        addDiagnostic('success', '✅ File sent successfully!');
-        showStatus('✅ File sent to your chat!', 'success');
+        console.log('✓ Backend responded:', response.status);
         
+        showStatus('✅ File sent to your chat!', 'success');
+        updateProgress('✅ File sent successfully!');
+        watchBtn.textContent = '✅ Complete!';
+        
+        // Close after 2 seconds
         setTimeout(() => {
-            addDiagnostic('info', 'Closing Telegram WebApp...');
-            window.Telegram.WebApp.close();
+            console.log('Closing...');
+            tg.close();
         }, 2000);
         
     } catch (error) {
-        addDiagnostic('error', 'Failed to send file', `${error.message}`);
-        showStatus('❌ Failed to send file', 'error');
+        console.error('Backend error:', error);
+        showStatus('❌ Failed to send file. Please contact support.', 'error');
+        updateProgress('❌ Failed to send file');
+        watchBtn.disabled = false;
+        watchBtn.textContent = '🔄 Try Again';
     } finally {
         loader.style.display = 'none';
     }
 }
+
+// ===== ERROR HANDLERS =====
+window.addEventListener('error', (e) => {
+    console.error('Global error:', e.error);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled rejection:', e.reason);
+});
+
+console.log('✓ Script loaded');
 </script>
 
 </body>
