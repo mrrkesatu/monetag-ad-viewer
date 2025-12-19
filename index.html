@@ -155,26 +155,26 @@
 <body>
     <div class="container">
         <div class="icon">📺</div>
-        <h1>Tonton iklan untuk membuka file</h1>
-        <p class="subtitle">Dapatkan file mu dengan menonton iklan</p>
+        <h1>Watch Ad to Unlock</h1>
+        <p class="subtitle">Get your file for free by watching a short advertisement</p>
         
         <div class="info-box">
             <div class="info-item">
                 <span>⏱️</span>
-                <span>Durasi iklan: ~30 detik</span>
+                <span>Ad duration: ~30 seconds</span>
             </div>
             <div class="info-item">
                 <span>🎁</span>
-                <span>File akan dikirim otomatis</span>
+                <span>File will be sent automatically</span>
             </div>
             <div class="info-item">
                 <span>✅</span>
-                <span>Hanya sekali menonton iklan</span>
+                <span>One-time watch only</span>
             </div>
         </div>
         
         <button id="watchBtn" class="watch-button">
-            📺 Tonton iklan
+            📺 Watch Ad Now
         </button>
         
         <div class="loader" id="loader"></div>
@@ -211,18 +211,24 @@
         }
         
         // Watch Ad button click
-        watchBtn.addEventListener('click', async () => {
+        watchBtn.addEventListener('click', () => {
             watchBtn.disabled = true;
             watchBtn.textContent = '⏳ Loading ad...';
             showStatus('Loading advertisement...', '');
             
             try {
                 // Call Monetag Rewarded Interstitial
-                // Replace show_10348819 with your actual Monetag function
-                await show_10348819();
-                
-                // Ad completed successfully
-                await onAdComplete();
+                // Format dari Monetag: show_10348819().then(() => { reward user })
+                show_10348819().then(() => {
+                    // User sudah nonton ad, sekarang kirim reward
+                    console.log('Ad watched successfully!');
+                    onAdComplete();
+                }).catch((error) => {
+                    console.error('Ad error:', error);
+                    showStatus('❌ Error loading ad. Please try again.', 'error');
+                    watchBtn.disabled = false;
+                    watchBtn.textContent = '📺 Watch Ad Now';
+                });
                 
             } catch (error) {
                 console.error('Ad error:', error);
