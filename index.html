@@ -184,7 +184,7 @@
         <div class="file-info" id="fileInfo"></div>
     </div>
 
-   <script>
+  <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
@@ -199,63 +199,83 @@ const statusDiv = document.getElementById('status');
 const loader = document.getElementById('loader');
 const fileInfo = document.getElementById('fileInfo');
 
+watchBtn.disabled = true;
+watchBtn.textContent = '⏳ Preparing ad...';
+
 if (!userId || !fileHash || !botUrl) {
   showStatus('❌ Invalid parameters', 'error');
-  watchBtn.disabled = true;
-} else {
-  fileInfo.innerHTML = `User ID: ${userId}<br>Ready to unlock file`;
+  return;
 }
 
-let monetagReady = false;
+fileInfo.innerHTML = `User ID: ${userId}<br>Preparing ad...`;
 
-// tunggu SDK Monetag siap
+function showStatus(msg, type) {
+  statusDiv.textContent = msg;
+  statusDiv.className = 'status show';
+  if (type) statusDiv.classList.add(type);
+}
+
+// WAIT SDK READY
 function waitForMonetag() {
   return new Promise((resolve, reject) => {
-    let tries = 0;
+    let attempts = 0;
     const timer = setInterval(() => {
       if (typeof window.show_10348819 === 'function') {
         clearInterval(timer);
-        monetagReady = true;
         resolve();
       }
-      if (++tries > 20) {
+      if (++attempts > 30) {
         clearInterval(timer);
-        reject('Monetag SDK not loaded');
+        reject('SDK not loaded');
       }
     }, 500);
   });
 }
 
-// preload iklan
+// PRELOAD
 async function preloadAd() {
+  showStatus('⏳ Loading advertisement...', '');
   await show_10348819({
     type: 'preload',
     ymid: userId
   });
 }
 
-watchBtn.addEventListener('click', async () => {
-  watchBtn.disabled = true;
-  watchBtn.textContent = '⏳ Loading ad...';
-  showStatus('Preparing advertisement...', '');
-
+// INIT FLOW
+(async () => {
   try {
-    if (!monetagReady) {
-      await waitForMonetag();
-    }
+    await waitForMonetag();
+
+    // delay WAJIB di Telegram
+    await new Promise(r => setTimeout(r, 1500));
 
     await preloadAd();
 
+    showStatus('✅ Ad ready! Click to watch.', 'success');
+    watchBtn.disabled = false;
+    watchBtn.textContent = '📺 Watch Ad Now';
+
+  } catch (err) {
+    console.error(err);
+    showStatus('❌ No ads available. Please try later.', 'error');
+  }
+})();
+
+// SHOW AD
+watchBtn.addEventListener('click', async () => {
+  watchBtn.disabled = true;
+  watchBtn.textContent = '📺 Showing ad...';
+
+  try {
     await show_10348819({
       ymid: userId
     });
 
-    // iklan selesai
     onAdComplete();
 
   } catch (err) {
     console.error(err);
-    showStatus('❌ No ads available. Please try again later.', 'error');
+    showStatus('❌ Ad not completed.', 'error');
     watchBtn.disabled = false;
     watchBtn.textContent = '📺 Watch Ad Now';
   }
@@ -269,21 +289,16 @@ async function onAdComplete() {
     const res = await fetch(`${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`);
     if (!res.ok) throw new Error();
 
-    showStatus('✅ File sent to your Telegram chat!', 'success');
+    showStatus('✅ File sent to your chat!', 'success');
     setTimeout(() => tg.close(), 2000);
 
   } catch {
-    showStatus('❌ Failed to send file', 'error');
+    showStatus('❌ Failed to send file.', 'error');
   } finally {
     loader.style.display = 'none';
   }
 }
-
-function showStatus(msg, type) {
-  statusDiv.textContent = msg;
-  statusDiv.className = 'status show';
-  if (type) statusDiv.classList.add(type);
-}
 </script>
+
 </body>
 </html>
