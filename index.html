@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Ad to Unlock</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Monetag Rewarded Interstitial Script -->
+    <script async="async" data-cfasync="false" src="//thubanoa.com/1?z=10348819()"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .info-item span {
+            margin-left: 8px;
+        }
+        
+        .watch-button {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .watch-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        
+        .watch-button:active {
+            transform: translateY(0);
+        }
+        
+        .watch-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .status {
+            font-size: 14px;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.success {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        
+        .status.error {
+            background: rgba(244, 67, 54, 0.3);
+        }
+        
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .file-info {
+            margin-top: 20px;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📺</div>
+        <h1>Tonton iklan untuk membuka file</h1>
+        <p class="subtitle">Dapatkan file mu dengan menonton iklan</p>
+        
+        <div class="info-box">
+            <div class="info-item">
+                <span>⏱️</span>
+                <span>Durasi iklan: ~30 detik</span>
+            </div>
+            <div class="info-item">
+                <span>🎁</span>
+                <span>File akan dikirim otomatis</span>
+            </div>
+            <div class="info-item">
+                <span>✅</span>
+                <span>Hanya sekali menonton iklan</span>
+            </div>
+        </div>
+        
+        <button id="watchBtn" class="watch-button">
+            📺 Tonton iklan
+        </button>
+        
+        <div class="loader" id="loader"></div>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="file-info" id="fileInfo"></div>
+    </div>
+
+    <script>
+        // Initialize Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        const fileHash = urlParams.get('fileHash');
+        const botUrl = urlParams.get('botUrl');
+        
+        // Elements
+        const watchBtn = document.getElementById('watchBtn');
+        const statusDiv = document.getElementById('status');
+        const loader = document.getElementById('loader');
+        const fileInfo = document.getElementById('fileInfo');
+        
+        // Validate parameters
+        if (!userId || !fileHash || !botUrl) {
+            showStatus('❌ Invalid parameters', 'error');
+            watchBtn.disabled = true;
+        } else {
+            fileInfo.innerHTML = `User ID: ${userId}<br>Ready to unlock file`;
+        }
+        
+        // Watch Ad button click
+        watchBtn.addEventListener('click', async () => {
+            watchBtn.disabled = true;
+            watchBtn.textContent = '⏳ Loading ad...';
+            showStatus('Loading advertisement...', '');
+            
+            try {
+                // Call Monetag Rewarded Interstitial
+                // Replace show_10348819 with your actual Monetag function
+                await show_10348819();
+                
+                // Ad completed successfully
+                await onAdComplete();
+                
+            } catch (error) {
+                console.error('Ad error:', error);
+                showStatus('❌ Error loading ad. Please try again.', 'error');
+                watchBtn.disabled = false;
+                watchBtn.textContent = '📺 Watch Ad Now';
+            }
+        });
+        
+        // Function called after ad is watched
+        async function onAdComplete() {
+            showStatus('✅ Ad watched! Sending file...', 'success');
+            loader.style.display = 'block';
+            
+            try {
+                // Notify bot that ad is complete
+                const response = await fetch(`${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`);
+                
+                if (response.ok) {
+                    showStatus('✅ Success! File sent to your chat!', 'success');
+                    
+                    // Close Web App after 2 seconds
+                    setTimeout(() => {
+                        tg.close();
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to send file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error sending file. Please contact support.', 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status show';
+            if (type) statusDiv.classList.add(type);
+        }
+        
+        // Handle Monetag function not loaded
+        if (typeof show_10348819 === 'undefined') {
+            // Fallback: define mock function for testing
+            window.show_10348819 = function() {
+                return new Promise((resolve) => {
+                    console.log('Mock ad shown (Monetag script not loaded)');
+                    // Simulate 3 second ad for testing
+                    setTimeout(() => {
+                        console.log('Mock ad completed');
+                        resolve();
+                    }, 3000);
+                });
+            };
+            
+            console.warn('Monetag script not loaded. Using mock function for testing.');
+        }
+    </script>
+</body>
+</html>
