@@ -6,9 +6,6 @@
     <title>Watch Ad to Unlock</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Monetag Rewarded Interstitial Script -->
-    <script src='//libtl.com/sdk.js' data-zone='10348819' data-sdk='show_10348819'></script>
-    
     <style>
         * {
             margin: 0;
@@ -107,6 +104,11 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+
+        .retry-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            margin-top: 10px;
+        }
         
         .status {
             font-size: 14px;
@@ -158,11 +160,11 @@
         .debug-info {
             margin-top: 30px;
             padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 10px;
             font-size: 11px;
             text-align: left;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
@@ -170,6 +172,18 @@
             margin: 5px 0;
             white-space: pre-wrap;
             word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .copy-debug {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -197,6 +211,10 @@
         <button id="watchBtn" class="watch-button">
             📺 Watch Ad Now
         </button>
+
+        <button id="retryBtn" class="watch-button retry-button" style="display: none;">
+            🔄 Retry Loading Ad
+        </button>
         
         <div class="loader" id="loader"></div>
         
@@ -205,7 +223,10 @@
         <div class="file-info" id="fileInfo"></div>
 
         <!-- Debug info -->
-        <div class="debug-info" id="debugInfo"></div>
+        <div class="debug-info" id="debugInfo">
+            <pre>Initializing...</pre>
+        </div>
+        <button class="copy-debug" onclick="copyDebug()">📋 Copy Debug Info</button>
     </div>
 
 <script>
@@ -219,22 +240,41 @@ const fileHash = urlParams.get('fileHash');
 const botUrl = urlParams.get('botUrl');
 
 const watchBtn = document.getElementById('watchBtn');
+const retryBtn = document.getElementById('retryBtn');
 const statusDiv = document.getElementById('status');
 const loader = document.getElementById('loader');
 const fileInfo = document.getElementById('fileInfo');
 const debugInfo = document.getElementById('debugInfo');
 
 let debugLogs = [];
+let adLoaded = false;
 
 function addDebugLog(msg) {
   const timestamp = new Date().toLocaleTimeString();
   debugLogs.push(`[${timestamp}] ${msg}`);
-  debugInfo.innerHTML = '<pre>' + debugLogs.slice(-15).join('\n') + '</pre>';
+  debugInfo.innerHTML = '<pre>' + debugLogs.slice(-20).join('\n') + '</pre>';
   console.log(`[${timestamp}] ${msg}`);
+}
+
+function copyDebug() {
+  const text = debugLogs.join('\n');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Debug info copied!');
+    });
+  } else {
+    alert('Debug info:\n\n' + text);
+  }
 }
 
 watchBtn.disabled = true;
 watchBtn.textContent = '⏳ Preparing ad...';
+
+addDebugLog('=== SYSTEM INFO ===');
+addDebugLog(`User Agent: ${navigator.userAgent}`);
+addDebugLog(`Platform: ${navigator.platform}`);
+addDebugLog(`Language: ${navigator.language}`);
+addDebugLog(`Telegram WebApp version: ${tg.version || 'unknown'}`);
 
 // Validasi parameter
 if (!userId || !fileHash || !botUrl) {
@@ -256,44 +296,88 @@ function showStatus(msg, type) {
   addDebugLog(`Status: ${msg}`);
 }
 
-// Tunggu SDK siap
-function waitForMonetag() {
+// Load SDK secara dinamis dengan retry
+function loadMontetagSDK() {
   return new Promise((resolve, reject) => {
-    addDebugLog('Waiting for Monetag SDK...');
+    addDebugLog('Loading Monetag SDK dynamically...');
+    
+    const script = document.createElement('script');
+    script.src = '//libtl.com/sdk.js';
+    script.setAttribute('data-zone', '10348819');
+    script.setAttribute('data-sdk', 'show_10348819');
+    
+    script.onload = () => {
+      addDebugLog('✓ SDK script loaded');
+      resolve();
+    };
+    
+    script.onerror = () => {
+      addDebugLog('✗ SDK script failed to load');
+      reject(new Error('Failed to load SDK script'));
+    };
+    
+    document.head.appendChild(script);
+    addDebugLog('SDK script tag injected');
+  });
+}
+
+// Tunggu SDK function tersedia
+function waitForSDKFunction(maxAttempts = 60) {
+  return new Promise((resolve, reject) => {
+    addDebugLog('Waiting for show_10348819 function...');
     let attempts = 0;
     
     const timer = setInterval(() => {
       attempts++;
       
-      if (typeof window.show_10348819 === 'function') {
+      // Check berbagai kemungkinan
+      const hasFunction = typeof window.show_10348819 === 'function';
+      const hasWindow = typeof window !== 'undefined';
+      
+      if (attempts % 5 === 0) {
+        addDebugLog(`Attempt ${attempts}/60...`);
+        addDebugLog(`  window exists: ${hasWindow}`);
+        addDebugLog(`  show_10348819 type: ${typeof window.show_10348819}`);
+        addDebugLog(`  window keys sample: ${Object.keys(window).filter(k => k.includes('show')).join(', ') || 'none'}`);
+      }
+      
+      if (hasFunction) {
         clearInterval(timer);
-        addDebugLog(`✓ SDK loaded after ${attempts} attempts`);
+        addDebugLog(`✓✓ SDK function ready after ${attempts} attempts`);
         resolve();
       }
       
-      if (attempts > 40) { // 20 detik timeout
+      if (attempts >= maxAttempts) {
         clearInterval(timer);
-        addDebugLog(`✗ SDK timeout after ${attempts} attempts`);
-        addDebugLog(`window.show_10348819 type: ${typeof window.show_10348819}`);
-        reject(new Error('SDK not loaded'));
+        addDebugLog(`✗✗ Timeout after ${attempts} attempts`);
+        addDebugLog(`All window keys: ${Object.keys(window).slice(0, 20).join(', ')}`);
+        reject(new Error('SDK function not available'));
       }
     }, 500);
   });
 }
 
-// Main initialization
-(async () => {
+// Main initialization dengan retry
+async function initializeAd(isRetry = false) {
   try {
-    addDebugLog('=== INITIALIZATION START ===');
+    addDebugLog(isRetry ? '=== RETRY INITIALIZATION ===' : '=== INITIALIZATION START ===');
     
-    // Tunggu SDK
-    await waitForMonetag();
+    if (!isRetry) {
+      loader.style.display = 'block';
+      showStatus('Loading SDK...', '');
+    }
+    
+    // Load SDK
+    await loadMontetagSDK();
+    
+    // Tunggu function tersedia
+    await waitForSDKFunction();
     
     // Delay untuk Telegram environment
-    addDebugLog('Waiting for Telegram environment...');
+    addDebugLog('Delaying for Telegram environment...');
     await new Promise(r => setTimeout(r, 2000));
 
-    // Preload ad dengan promise handling yang benar
+    // Preload ad
     addDebugLog('Starting ad preload...');
     showStatus('⏳ Loading advertisement...', '');
     
@@ -302,37 +386,70 @@ function waitForMonetag() {
       ymid: userId 
     })
     .then(() => {
-      addDebugLog('✓✓✓ Preload SUCCESS');
+      addDebugLog('✓✓✓ PRELOAD SUCCESS');
+      adLoaded = true;
       showStatus('✅ Ad ready! Click to watch.', 'success');
       watchBtn.disabled = false;
       watchBtn.textContent = '📺 Watch Ad Now';
+      retryBtn.style.display = 'none';
+      loader.style.display = 'none';
     })
     .catch((error) => {
-      addDebugLog(`✗✗✗ Preload FAILED`);
-      addDebugLog(`Error: ${error?.message || error || 'Unknown error'}`);
+      addDebugLog(`✗✗✗ PRELOAD FAILED`);
+      addDebugLog(`Error: ${JSON.stringify(error)}`);
       addDebugLog(`Error type: ${typeof error}`);
+      addDebugLog(`Error keys: ${error ? Object.keys(error).join(', ') : 'null'}`);
       
-      showStatus('⚠️ Ad may not be available. Try clicking anyway.', 'warning');
+      // Coba show anyway
+      showStatus('⚠️ Preload failed, but you can try watching', 'warning');
       watchBtn.disabled = false;
       watchBtn.textContent = '📺 Try Watch Ad';
+      loader.style.display = 'none';
     });
 
   } catch (err) {
-    addDebugLog(`✗ Init error: ${err.message || err}`);
-    showStatus('❌ Failed to initialize. Please refresh the page.', 'error');
+    addDebugLog(`✗✗ INIT FAILED: ${err.message}`);
+    addDebugLog(`Error stack: ${err.stack}`);
+    
+    showStatus('❌ Failed to load ad system', 'error');
     watchBtn.disabled = true;
     watchBtn.textContent = '❌ Ad Not Available';
+    retryBtn.style.display = 'block';
+    loader.style.display = 'none';
+    
+    // Check specific issues
+    if (err.message.includes('SDK script')) {
+      addDebugLog('DIAGNOSIS: Cannot reach libtl.com - check network/firewall');
+    } else if (err.message.includes('function not available')) {
+      addDebugLog('DIAGNOSIS: SDK loaded but function not exposed');
+    }
   }
-})();
+}
+
+// Retry handler
+retryBtn.addEventListener('click', () => {
+  retryBtn.disabled = true;
+  retryBtn.textContent = '🔄 Retrying...';
+  loader.style.display = 'block';
+  
+  setTimeout(() => {
+    retryBtn.disabled = false;
+    retryBtn.textContent = '🔄 Retry Loading Ad';
+    initializeAd(true);
+  }, 1000);
+});
+
+// Start initialization
+initializeAd();
 
 // Show ad on button click
 watchBtn.addEventListener('click', async () => {
   watchBtn.disabled = true;
   watchBtn.textContent = '📺 Showing ad...';
-  addDebugLog('=== USER CLICKED WATCH BUTTON ===');
+  addDebugLog('=== USER CLICKED WATCH ===');
 
   if (typeof window.show_10348819 !== 'function') {
-    addDebugLog('✗ SDK function not available');
+    addDebugLog('✗ SDK function not available at click time');
     showStatus('❌ SDK not loaded', 'error');
     watchBtn.disabled = false;
     watchBtn.textContent = '📺 Watch Ad Now';
@@ -344,58 +461,54 @@ watchBtn.addEventListener('click', async () => {
     
     show_10348819({ ymid: userId })
       .then(() => {
-        addDebugLog('✓✓✓ Ad COMPLETED successfully');
+        addDebugLog('✓✓✓ AD COMPLETED');
         onAdComplete();
       })
       .catch((error) => {
-        addDebugLog(`✗✗✗ Ad show FAILED`);
-        addDebugLog(`Error: ${error?.message || error || 'Unknown'}`);
-        addDebugLog(`Error type: ${typeof error}`);
+        addDebugLog(`✗✗✗ AD FAILED/SKIPPED`);
+        addDebugLog(`Error: ${JSON.stringify(error)}`);
         
-        showStatus('❌ Ad was skipped or failed. Please try again.', 'error');
+        showStatus('❌ Ad was not completed. Please try again.', 'error');
         watchBtn.disabled = false;
         watchBtn.textContent = '📺 Watch Ad Now';
       });
 
   } catch (err) {
-    addDebugLog(`✗ Exception: ${err.message || err}`);
-    showStatus('❌ Unexpected error. Please try again.', 'error');
+    addDebugLog(`✗ Exception: ${err.message}`);
+    showStatus('❌ Unexpected error', 'error');
     watchBtn.disabled = false;
     watchBtn.textContent = '📺 Watch Ad Now';
   }
 });
 
 async function onAdComplete() {
-  addDebugLog('=== AD COMPLETE - SENDING FILE ===');
+  addDebugLog('=== SENDING FILE ===');
   showStatus('✅ Ad watched! Sending file...', 'success');
   loader.style.display = 'block';
 
   try {
     const url = `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`;
-    addDebugLog(`Calling backend: ${url}`);
+    addDebugLog(`Backend: ${url}`);
     
     const res = await fetch(url);
+    addDebugLog(`Response: ${res.status}`);
     
-    addDebugLog(`Response status: ${res.status}`);
-    
-    if (!res.ok) {
-      throw new Error(`Server returned ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Server ${res.status}`);
 
-    const responseText = await res.text();
-    addDebugLog(`Response: ${responseText.substring(0, 100)}`);
+    const text = await res.text();
+    addDebugLog(`Body: ${text.substring(0, 50)}`);
     
-    addDebugLog('✓✓✓ File sent successfully');
+    addDebugLog('✓✓✓ FILE SENT');
     showStatus('✅ File sent to your chat!', 'success');
     
     setTimeout(() => {
-      addDebugLog('Closing Telegram WebApp...');
+      addDebugLog('Closing...');
       tg.close();
     }, 2500);
 
   } catch (err) {
     addDebugLog(`✗ Backend error: ${err.message}`);
-    showStatus('❌ Failed to send file. Please contact support.', 'error');
+    showStatus('❌ Failed to send file', 'error');
   } finally {
     loader.style.display = 'none';
   }
