@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Watch Ad to Unlock</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10348819' data-sdk='show_10348819'></script>
     
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -24,6 +24,7 @@
             justify-content: center;
             color: white;
             padding: 20px;
+            overflow-x: hidden;
         }
         
         .container {
@@ -33,34 +34,34 @@
         }
         
         .icon {
-            font-size: 80px;
+            font-size: 60px;
             margin-bottom: 20px;
             animation: pulse 2s infinite;
         }
         
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.05); }
         }
         
         h1 {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 10px;
             font-weight: 600;
         }
         
         .subtitle {
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0.9;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         
         .info-box {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
+            padding: 15px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
@@ -68,8 +69,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 10px 0;
-            font-size: 14px;
+            margin: 8px 0;
+            font-size: 13px;
         }
         
         .info-item span {
@@ -80,21 +81,21 @@
             background: linear-gradient(135deg, #FF6B6B, #FF8E53);
             color: white;
             border: none;
-            padding: 18px 40px;
+            padding: 16px 40px;
             border-radius: 50px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             width: 100%;
             max-width: 300px;
+            touch-action: manipulation;
         }
         
-        .watch-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        .watch-button:active {
+            transform: scale(0.98);
         }
         
         .watch-button:disabled {
@@ -105,9 +106,9 @@
         }
         
         .status {
-            font-size: 14px;
-            margin-top: 20px;
-            padding: 15px;
+            font-size: 13px;
+            margin-top: 15px;
+            padding: 12px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
             display: none;
@@ -133,10 +134,10 @@
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid white;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 15px auto;
             display: none;
         }
         
@@ -146,29 +147,51 @@
         }
 
         .progress-text {
-            font-size: 13px;
-            margin-top: 15px;
+            font-size: 12px;
+            margin-top: 12px;
             opacity: 0.9;
+        }
+
+        .timer {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #FFD700;
         }
 
         .instruction {
             background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
-            margin-top: 20px;
-            font-size: 13px;
-            line-height: 1.6;
+            margin-top: 15px;
+            font-size: 12px;
+            line-height: 1.5;
         }
 
         .instruction strong {
             color: #FFD700;
         }
 
-        .timer {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #FFD700;
+        #adContainer {
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            margin-top: 15px;
+            text-align: left;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
         }
     </style>
 </head>
@@ -176,7 +199,7 @@
     <div class="container">
         <div class="icon">📺</div>
         <h1>Watch Ad to Unlock</h1>
-        <p class="subtitle">Get your file for free by watching a short advertisement</p>
+        <p class="subtitle">Get your file for free</p>
         
         <div class="info-box">
             <div class="info-item">
@@ -185,7 +208,7 @@
             </div>
             <div class="info-item">
                 <span>✅</span>
-                <span>Click Continue in the ad</span>
+                <span>Wait for timer</span>
             </div>
             <div class="info-item">
                 <span>🎁</span>
@@ -194,10 +217,12 @@
         </div>
         
         <button id="watchBtn" class="watch-button" disabled>
-            ⏳ Loading ad...
+            ⏳ Loading...
         </button>
         
         <div class="timer" id="timer" style="display: none;"></div>
+        
+        <div id="adContainer"></div>
         
         <div class="loader" id="loader"></div>
         
@@ -206,123 +231,153 @@
         <p class="progress-text" id="progressText">Initializing...</p>
         
         <div class="instruction">
-            <strong>📌 How it works:</strong><br>
+            <strong>📌 Instructions:</strong><br>
             1. Click "Watch Ad Now"<br>
-            2. <strong>Watch the FULL ad</strong> (15-20 seconds)<br>
-            3. <strong>Click "Continue"</strong> button in the ad<br>
-            4. Wait for timer to finish<br>
-            5. File will be sent automatically
+            2. <strong>Watch the full ad</strong><br>
+            3. Wait for countdown<br>
+            4. File will be sent automatically
         </div>
+
+        <div id="debugInfo" class="debug-info"></div>
     </div>
 
 <script>
-// ===== INIT =====
+// ===== CONFIG =====
+const DEBUG_MODE = true; // Set false untuk production
+const AD_MIN_DURATION = 15; // Minimal durasi ad dalam detik
+const COUNTDOWN_DURATION = 5; // Countdown sebelum kirim file
+
+// ===== INIT TELEGRAM =====
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-console.log('✓ Telegram initialized');
-
-// ===== PARAMETERS =====
+// ===== GET PARAMETERS =====
 const urlParams = new URLSearchParams(window.location.search);
 const userId = urlParams.get('userId');
 const fileHash = urlParams.get('fileHash');
 const botUrl = urlParams.get('botUrl');
 
-console.log('Parameters:', {userId, fileHash, botUrl});
-
-// ===== DOM =====
+// ===== DOM ELEMENTS =====
 const watchBtn = document.getElementById('watchBtn');
 const statusDiv = document.getElementById('status');
 const loader = document.getElementById('loader');
 const progressText = document.getElementById('progressText');
 const timerDiv = document.getElementById('timer');
+const adContainer = document.getElementById('adContainer');
+const debugInfo = document.getElementById('debugInfo');
 
 // ===== STATE =====
 let adWatchedFully = false;
 let timerInterval = null;
+let adStartTime = null;
 
-// ===== VALIDATE =====
-if (!userId || !fileHash || !botUrl) {
-    showStatus('❌ Invalid parameters', 'error');
-    progressText.textContent = '❌ Missing parameters';
-    console.error('Missing params');
-} else {
-    console.log('✓ Parameters OK');
+// ===== DEBUG LOGGING =====
+function debugLog(msg, data) {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] ${msg}`, data || '');
+    
+    if (DEBUG_MODE) {
+        debugInfo.classList.add('show');
+        debugInfo.innerHTML += `<div>[${timestamp}] ${msg}</div>`;
+        debugInfo.scrollTop = debugInfo.scrollHeight;
+    }
 }
 
+// ===== UI HELPERS =====
 function showStatus(msg, type) {
     statusDiv.textContent = msg;
     statusDiv.className = 'status show';
     if (type) statusDiv.classList.add(type);
+    debugLog('Status: ' + msg);
 }
 
 function updateProgress(text) {
     progressText.textContent = text;
-    console.log('Progress:', text);
+    debugLog('Progress: ' + text);
 }
 
-// ===== WAIT SDK =====
-function waitForSDK() {
+function showLoader(show) {
+    loader.style.display = show ? 'block' : 'none';
+}
+
+// ===== VALIDATE PARAMETERS =====
+debugLog('Parameters:', {userId, fileHash, botUrl});
+
+if (!userId || !fileHash || !botUrl) {
+    showStatus('❌ Invalid parameters', 'error');
+    updateProgress('❌ Missing parameters');
+    debugLog('ERROR: Missing required parameters');
+} else {
+    debugLog('✓ Parameters OK');
+}
+
+// ===== DETECT PLATFORM =====
+const platform = tg.platform || 'unknown';
+const isMobile = /android|iphone|ipad/i.test(platform);
+debugLog('Platform:', platform);
+debugLog('Is Mobile:', isMobile);
+
+// ===== LOAD MONETAG SDK =====
+function loadMonetag() {
     return new Promise((resolve, reject) => {
-        updateProgress('⏳ Loading SDK...');
-        let attempts = 0;
+        debugLog('Loading Monetag SDK...');
+        updateProgress('⏳ Loading ad system...');
         
-        const check = setInterval(() => {
-            attempts++;
-            if (typeof window.show_10348819 === 'function') {
-                clearInterval(check);
-                console.log(`✓ SDK loaded (${attempts * 0.5}s)`);
-                updateProgress('✓ SDK loaded');
-                resolve();
-            }
-            if (attempts >= 60) {
-                clearInterval(check);
-                console.error('✗ SDK timeout');
-                reject(new Error('SDK timeout'));
-            }
-        }, 500);
+        const script = document.createElement('script');
+        script.src = '//libtl.com/sdk.js';
+        script.setAttribute('data-zone', '10348819');
+        script.setAttribute('data-sdk', 'show_10348819');
+        
+        script.onload = () => {
+            debugLog('✓ SDK script loaded');
+            // Wait for SDK function to be available
+            let attempts = 0;
+            const checkSDK = setInterval(() => {
+                attempts++;
+                if (typeof window.show_10348819 === 'function') {
+                    clearInterval(checkSDK);
+                    debugLog(`✓ SDK ready (${attempts * 0.5}s)`);
+                    resolve();
+                }
+                if (attempts >= 40) { // 20 seconds timeout
+                    clearInterval(checkSDK);
+                    debugLog('✗ SDK timeout');
+                    reject(new Error('SDK timeout'));
+                }
+            }, 500);
+        };
+        
+        script.onerror = () => {
+            debugLog('✗ SDK script load failed');
+            reject(new Error('Failed to load SDK'));
+        };
+        
+        document.head.appendChild(script);
     });
 }
 
-// ===== PRELOAD =====
+// ===== PRELOAD AD (optional) =====
 async function preloadAd() {
-    updateProgress('⏳ Preparing ad...');
+    if (!window.show_10348819) {
+        debugLog('⚠️ Preload skipped - SDK not ready');
+        return false;
+    }
+    
     try {
-        await show_10348819({ type: 'preload', ymid: userId });
-        console.log('✓ Preload success');
-        updateProgress('✅ Ad ready!');
+        debugLog('Preloading ad...');
+        await window.show_10348819({ type: 'preload', ymid: userId });
+        debugLog('✓ Preload success');
         return true;
     } catch (error) {
-        console.warn('Preload failed:', error);
-        updateProgress('⚠️ Preload failed');
+        debugLog('⚠️ Preload failed:', error.message);
         return false;
     }
 }
 
-// ===== INIT =====
-(async function init() {
-    try {
-        await waitForSDK();
-        await new Promise(r => setTimeout(r, 2000));
-        await preloadAd();
-        await new Promise(r => setTimeout(r, 500));
-        
-        watchBtn.disabled = false;
-        watchBtn.textContent = '📺 Watch Ad Now';
-        showStatus('✅ Ready!', 'success');
-        updateProgress('✅ Click button to watch');
-        
-    } catch (error) {
-        console.error('Init error:', error);
-        watchBtn.textContent = '❌ Error';
-        showStatus('❌ Failed to initialize', 'error');
-        updateProgress('❌ Init failed');
-    }
-})();
-
 // ===== COUNTDOWN TIMER =====
 function startCountdown(seconds) {
+    debugLog(`Starting countdown: ${seconds}s`);
     timerDiv.style.display = 'block';
     let remaining = seconds;
     
@@ -335,134 +390,128 @@ function startCountdown(seconds) {
         if (remaining <= 0) {
             clearInterval(timerInterval);
             timerDiv.style.display = 'none';
+            debugLog('Countdown finished');
             sendFileToUser();
         }
     }, 1000);
 }
 
 // ===== WATCH AD =====
-watchBtn.addEventListener('click', async function() {
-    console.log('=== USER CLICKED ===');
+async function watchAd() {
+    debugLog('=== USER CLICKED WATCH AD ===');
     
     watchBtn.disabled = true;
     watchBtn.textContent = '📺 Loading ad...';
     updateProgress('📺 Opening ad...');
-    adWatchedFully = false;
     
     if (typeof window.show_10348819 !== 'function') {
-        console.error('✗ SDK not available');
-        showStatus('❌ SDK error', 'error');
+        debugLog('✗ SDK not available');
+        showStatus('❌ Ad system error', 'error');
         watchBtn.disabled = false;
-        watchBtn.textContent = '📺 Watch Ad Now';
+        watchBtn.textContent = '🔄 Retry';
         return;
     }
     
     try {
-        console.log('Calling show_10348819...');
+        adStartTime = Date.now();
+        debugLog('Calling ad SDK...');
         
-        const adStartTime = Date.now();
-        
-        // Panggil iklan
-        show_10348819({ ymid: userId })
+        // Show ad
+        window.show_10348819({ ymid: userId })
             .then(() => {
-                // Promise resolved (ad completed)
-                const watchDuration = (Date.now() - adStartTime) / 1000;
-                console.log(`✓ Ad completed. Duration: ${watchDuration}s`);
+                const duration = (Date.now() - adStartTime) / 1000;
+                debugLog(`✓ Ad promise resolved. Duration: ${duration.toFixed(1)}s`);
                 
-                if (watchDuration >= 15) {
+                if (duration >= AD_MIN_DURATION) {
+                    debugLog('✓ Duration sufficient');
                     adWatchedFully = true;
                     onAdCompleted();
                 } else {
-                    console.warn('Ad duration too short:', watchDuration);
-                    showStatus('⚠️ Please watch the full ad', 'warning');
+                    debugLog(`✗ Duration too short: ${duration.toFixed(1)}s`);
+                    showStatus('⚠️ Watch the full ad', 'warning');
                     watchBtn.disabled = false;
                     watchBtn.textContent = '📺 Watch Ad Again';
                 }
             })
             .catch((error) => {
-                // Promise rejected (ad closed early atau error)
-                const watchDuration = (Date.now() - adStartTime) / 1000;
-                console.log(`Ad promise rejected. Duration: ${watchDuration}s`, error);
+                const duration = (Date.now() - adStartTime) / 1000;
+                debugLog(`Ad promise rejected. Duration: ${duration.toFixed(1)}s`, error);
                 
-                // Jika user nonton >= 15 detik sebelum close, anggap valid
-                if (watchDuration >= 15) {
-                    console.log('Duration sufficient, proceeding...');
+                // Accept if watched long enough
+                if (duration >= AD_MIN_DURATION) {
+                    debugLog('✓ Duration sufficient despite rejection');
                     adWatchedFully = true;
                     onAdCompleted();
                 } else {
-                    console.warn('Ad not completed fully');
-                    showStatus('⚠️ Please watch the full ad and click Continue', 'warning');
-                    updateProgress('⚠️ Ad not completed');
+                    debugLog('✗ Ad not completed');
+                    showStatus('⚠️ Please watch the full ad', 'warning');
+                    updateProgress('⚠️ Ad closed early');
                     watchBtn.disabled = false;
                     watchBtn.textContent = '📺 Watch Ad Again';
                 }
             });
         
-        // Update UI saat ad dimulai
+        // Update UI
         await new Promise(r => setTimeout(r, 1000));
         watchBtn.textContent = '👀 Watching...';
-        showStatus('👀 Please watch the FULL ad and click Continue', 'warning');
-        updateProgress('⏳ Watch for at least 15 seconds...');
+        showStatus('👀 Watch the full ad', 'warning');
+        updateProgress(`⏳ Watch for ${AD_MIN_DURATION}+ seconds...`);
         
     } catch (error) {
-        console.error('Watch error:', error);
-        showStatus('❌ Ad error. Please try again.', 'error');
-        updateProgress('❌ Error occurred');
+        debugLog('✗ Watch error:', error.message);
+        showStatus('❌ Ad error', 'error');
+        updateProgress('❌ Error: ' + error.message);
         watchBtn.disabled = false;
-        watchBtn.textContent = '📺 Watch Ad Now';
+        watchBtn.textContent = '🔄 Retry';
     }
-});
+}
 
 // ===== AD COMPLETED =====
 function onAdCompleted() {
-    console.log('=== AD COMPLETED ===');
+    debugLog('=== AD COMPLETED ===');
     
     watchBtn.textContent = '✅ Ad Completed!';
-    showStatus('✅ Ad completed! Preparing file...', 'success');
-    updateProgress('✅ Starting countdown...');
+    showStatus('✅ Ad completed!', 'success');
+    updateProgress(`⏳ Countdown ${COUNTDOWN_DURATION}s...`);
     
-    // Countdown 5 detik sebelum kirim file
-    // Ini untuk memastikan ad benar-benar selesai
-    startCountdown(5);
+    startCountdown(COUNTDOWN_DURATION);
 }
 
 // ===== SEND FILE =====
 async function sendFileToUser() {
-    console.log('=== SENDING FILE ===');
+    debugLog('=== SENDING FILE ===');
     
-    showStatus('✅ Sending file...', 'success');
+    showStatus('📤 Sending file...', 'success');
     updateProgress('📤 Sending to Telegram...');
-    loader.style.display = 'block';
+    showLoader(true);
     watchBtn.textContent = '📤 Sending...';
     
     try {
         const url = `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`;
-        console.log('Calling:', url);
+        debugLog('API URL:', url);
         
         const response = await fetch(url, { 
             method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: { 'Accept': 'application/json' }
         });
         
-        console.log('Response status:', response.status);
+        debugLog('Response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`Server error: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Response data:', data);
+        debugLog('Response data:', data);
         
         if (data.success) {
-            console.log('✓✓✓ FILE SENT!');
+            debugLog('✓✓✓ FILE SENT SUCCESSFULLY!');
             showStatus('✅ File sent to your chat!', 'success');
-            updateProgress('✅ File sent successfully!');
+            updateProgress('✅ Check Telegram!');
             watchBtn.textContent = '✅ Done!';
             
             setTimeout(() => {
-                console.log('Closing WebApp...');
+                debugLog('Closing Mini App...');
                 tg.close();
             }, 2000);
         } else {
@@ -470,26 +519,58 @@ async function sendFileToUser() {
         }
         
     } catch (error) {
-        console.error('Send error:', error);
-        showStatus(`❌ Error: ${error.message}`, 'error');
-        updateProgress('❌ Failed to send file');
+        debugLog('✗ Send error:', error.message);
+        showStatus(`❌ ${error.message}`, 'error');
+        updateProgress('❌ Failed. Try again or contact support.');
         watchBtn.disabled = false;
-        watchBtn.textContent = '🔄 Try Again';
-        
-        // Show detailed error
-        if (error.message.includes('404')) {
-            updateProgress('❌ Endpoint not found. Check worker deployment.');
-        } else if (error.message.includes('500')) {
-            updateProgress('❌ Server error. Check worker logs.');
-        }
+        watchBtn.textContent = '🔄 Retry';
     } finally {
-        loader.style.display = 'none';
+        showLoader(false);
     }
 }
 
+// ===== INITIALIZE =====
+(async function init() {
+    try {
+        debugLog('=== INITIALIZATION START ===');
+        
+        // Load SDK
+        await loadMonetag();
+        await new Promise(r => setTimeout(r, 1500));
+        
+        // Try preload (non-blocking)
+        preloadAd().catch(() => {});
+        
+        await new Promise(r => setTimeout(r, 500));
+        
+        // Ready!
+        watchBtn.disabled = false;
+        watchBtn.textContent = '📺 Watch Ad Now';
+        showStatus('✅ Ready!', 'success');
+        updateProgress('✅ Click button to start');
+        debugLog('=== INITIALIZATION COMPLETE ===');
+        
+        // Add click handler
+        watchBtn.addEventListener('click', watchAd);
+        
+    } catch (error) {
+        debugLog('✗ Init error:', error.message);
+        watchBtn.textContent = '❌ Error';
+        showStatus('❌ Failed to load', 'error');
+        updateProgress('❌ ' + error.message);
+        
+        // Still allow retry
+        watchBtn.disabled = false;
+        watchBtn.textContent = '🔄 Retry Load';
+        watchBtn.addEventListener('click', () => {
+            location.reload();
+        });
+    }
+})();
+
 // ===== ERROR HANDLERS =====
 window.addEventListener('error', (e) => {
-    console.error('Global error:', e.error);
+    debugLog('Global error:', e.error?.message || e.message);
 });
 
 window.addEventListener('beforeunload', () => {
@@ -498,7 +579,13 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-console.log('✓ Script loaded');
+// ===== TELEGRAM BACK BUTTON =====
+tg.BackButton.onClick(() => {
+    debugLog('Back button clicked');
+    tg.close();
+});
+
+debugLog('✓ Script loaded successfully');
 </script>
 
 </body>
