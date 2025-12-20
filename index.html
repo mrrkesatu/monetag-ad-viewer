@@ -163,6 +163,13 @@
         .instruction strong {
             color: #FFD700;
         }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #FFD700;
+        }
     </style>
 </head>
 <body>
@@ -174,11 +181,11 @@
         <div class="info-box">
             <div class="info-item">
                 <span>⏱️</span>
-                <span>Watch for 15 seconds</span>
+                <span>Watch for 15-20 seconds</span>
             </div>
             <div class="info-item">
-                <span>▶️</span>
-                <span>Click Continue when ready</span>
+                <span>✅</span>
+                <span>Click Continue in the ad</span>
             </div>
             <div class="info-item">
                 <span>🎁</span>
@@ -190,6 +197,8 @@
             ⏳ Loading ad...
         </button>
         
+        <div class="timer" id="timer" style="display: none;"></div>
+        
         <div class="loader" id="loader"></div>
         
         <div id="status" class="status"></div>
@@ -197,11 +206,12 @@
         <p class="progress-text" id="progressText">Initializing...</p>
         
         <div class="instruction">
-            <strong>📌 Instructions:</strong><br>
+            <strong>📌 How it works:</strong><br>
             1. Click "Watch Ad Now"<br>
-            2. Watch full ad (15 seconds)<br>
+            2. <strong>Watch the FULL ad</strong> (15-20 seconds)<br>
             3. <strong>Click "Continue"</strong> button in the ad<br>
-            4. File will be sent automatically
+            4. Wait for timer to finish<br>
+            5. File will be sent automatically
         </div>
     </div>
 
@@ -226,9 +236,11 @@ const watchBtn = document.getElementById('watchBtn');
 const statusDiv = document.getElementById('status');
 const loader = document.getElementById('loader');
 const progressText = document.getElementById('progressText');
+const timerDiv = document.getElementById('timer');
 
 // ===== STATE =====
-let adStartTime = null;
+let adWatchedFully = false;
+let timerInterval = null;
 
 // ===== VALIDATE =====
 if (!userId || !fileHash || !botUrl) {
@@ -309,6 +321,25 @@ async function preloadAd() {
     }
 })();
 
+// ===== COUNTDOWN TIMER =====
+function startCountdown(seconds) {
+    timerDiv.style.display = 'block';
+    let remaining = seconds;
+    
+    timerDiv.textContent = remaining;
+    
+    timerInterval = setInterval(() => {
+        remaining--;
+        timerDiv.textContent = remaining;
+        
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            timerDiv.style.display = 'none';
+            sendFileToUser();
+        }
+    }, 1000);
+}
+
 // ===== WATCH AD =====
 watchBtn.addEventListener('click', async function() {
     console.log('=== USER CLICKED ===');
@@ -316,7 +347,7 @@ watchBtn.addEventListener('click', async function() {
     watchBtn.disabled = true;
     watchBtn.textContent = '📺 Loading ad...';
     updateProgress('📺 Opening ad...');
-    adStartTime = Date.now();
+    adWatchedFully = false;
     
     if (typeof window.show_10348819 !== 'function') {
         console.error('✗ SDK not available');
@@ -329,45 +360,49 @@ watchBtn.addEventListener('click', async function() {
     try {
         console.log('Calling show_10348819...');
         
-        // Call ad WITHOUT waiting for promise (ad may reject on Continue click)
+        const adStartTime = Date.now();
+        
+        // Panggil iklan
         show_10348819({ ymid: userId })
             .then(() => {
-                console.log('✓ Ad promise resolved (might be after close)');
+                // Promise resolved (ad completed)
+                const watchDuration = (Date.now() - adStartTime) / 1000;
+                console.log(`✓ Ad completed. Duration: ${watchDuration}s`);
+                
+                if (watchDuration >= 15) {
+                    adWatchedFully = true;
+                    onAdCompleted();
+                } else {
+                    console.warn('Ad duration too short:', watchDuration);
+                    showStatus('⚠️ Please watch the full ad', 'warning');
+                    watchBtn.disabled = false;
+                    watchBtn.textContent = '📺 Watch Ad Again';
+                }
             })
             .catch((error) => {
-                console.log('Ad promise rejected:', error);
-                // Ini NORMAL jika user klik Continue
+                // Promise rejected (ad closed early atau error)
+                const watchDuration = (Date.now() - adStartTime) / 1000;
+                console.log(`Ad promise rejected. Duration: ${watchDuration}s`, error);
+                
+                // Jika user nonton >= 15 detik sebelum close, anggap valid
+                if (watchDuration >= 15) {
+                    console.log('Duration sufficient, proceeding...');
+                    adWatchedFully = true;
+                    onAdCompleted();
+                } else {
+                    console.warn('Ad not completed fully');
+                    showStatus('⚠️ Please watch the full ad and click Continue', 'warning');
+                    updateProgress('⚠️ Ad not completed');
+                    watchBtn.disabled = false;
+                    watchBtn.textContent = '📺 Watch Ad Again';
+                }
             });
         
-        // Tunggu 2 detik untuk ad muncul
-        await new Promise(r => setTimeout(r, 2000));
-        
-        watchBtn.textContent = '👀 Watching ad...';
-        showStatus('👀 Please watch the ad and click Continue', 'warning');
-        updateProgress('⏳ Watch for 15s then click Continue');
-        
-        // Tunggu minimum 15 detik
-        await new Promise(r => setTimeout(r, 15000));
-        
-        // Mulai polling untuk verifikasi dari backend
-        console.log('Starting verification polling...');
-        watchBtn.textContent = '⏳ Verifying...';
-        showStatus('⏳ Verifying ad completion...', 'warning');
-        updateProgress('⏳ Checking with server...');
-        
-        const verified = await pollForCompletion();
-        
-        if (verified) {
-            onAdComplete();
-        } else {
-            // Timeout atau gagal
-            console.warn('Verification timeout');
-            showStatus('⚠️ Verification timeout. Trying to send file anyway...', 'warning');
-            updateProgress('⚠️ Timeout, attempting send...');
-            
-            // Try send anyway
-            tryDirectSend();
-        }
+        // Update UI saat ad dimulai
+        await new Promise(r => setTimeout(r, 1000));
+        watchBtn.textContent = '👀 Watching...';
+        showStatus('👀 Please watch the FULL ad and click Continue', 'warning');
+        updateProgress('⏳ Watch for at least 15 seconds...');
         
     } catch (error) {
         console.error('Watch error:', error);
@@ -378,92 +413,56 @@ watchBtn.addEventListener('click', async function() {
     }
 });
 
-// ===== POLL FOR COMPLETION =====
-async function pollForCompletion() {
-    let attempts = 0;
-    const maxAttempts = 20; // 20 detik
+// ===== AD COMPLETED =====
+function onAdCompleted() {
+    console.log('=== AD COMPLETED ===');
     
-    while (attempts < maxAttempts) {
-        attempts++;
-        console.log(`Polling attempt ${attempts}/${maxAttempts}`);
-        
-        try {
-            const response = await fetch(
-                `${botUrl}/check-ad-completion?userId=${userId}&fileHash=${fileHash}`,
-                { method: 'GET' }
-            );
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Poll response:', data);
-                
-                if (data.completed === true) {
-                    console.log('✓✓✓ VERIFIED!');
-                    return true;
-                }
-            }
-        } catch (error) {
-            console.error('Poll error:', error);
-        }
-        
-        await new Promise(r => setTimeout(r, 1000));
-    }
+    watchBtn.textContent = '✅ Ad Completed!';
+    showStatus('✅ Ad completed! Preparing file...', 'success');
+    updateProgress('✅ Starting countdown...');
     
-    return false;
+    // Countdown 5 detik sebelum kirim file
+    // Ini untuk memastikan ad benar-benar selesai
+    startCountdown(5);
 }
 
-// ===== DIRECT SEND (FALLBACK) =====
-async function tryDirectSend() {
-    try {
-        const response = await fetch(
-            `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`,
-            { method: 'GET' }
-        );
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                onAdComplete();
-            } else {
-                throw new Error(data.error || 'Failed');
-            }
-        } else {
-            throw new Error(`Server error: ${response.status}`);
-        }
-    } catch (error) {
-        console.error('Direct send error:', error);
-        showStatus('❌ Failed to send file. Please contact support.', 'error');
-        updateProgress('❌ Send failed');
-        watchBtn.disabled = false;
-        watchBtn.textContent = '🔄 Try Again';
-    }
-}
-
-// ===== AD COMPLETE =====
-async function onAdComplete() {
-    console.log('=== AD COMPLETE ===');
+// ===== SEND FILE =====
+async function sendFileToUser() {
+    console.log('=== SENDING FILE ===');
     
-    showStatus('✅ Ad completed! Sending file...', 'success');
-    updateProgress('📤 Sending file...');
+    showStatus('✅ Sending file...', 'success');
+    updateProgress('📤 Sending to Telegram...');
     loader.style.display = 'block';
-    watchBtn.textContent = '✅ Complete!';
+    watchBtn.textContent = '📤 Sending...';
     
     try {
         const url = `${botUrl}/ad-complete?userId=${userId}&fileHash=${fileHash}`;
         console.log('Calling:', url);
         
-        const response = await fetch(url, { method: 'GET' });
+        const response = await fetch(url, { 
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Response data:', data);
         
-        console.log('Response:', data);
-        
-        if (response.ok && data.success) {
-            console.log('✓ File sent');
+        if (data.success) {
+            console.log('✓✓✓ FILE SENT!');
             showStatus('✅ File sent to your chat!', 'success');
-            updateProgress('✅ File sent!');
+            updateProgress('✅ File sent successfully!');
+            watchBtn.textContent = '✅ Done!';
             
             setTimeout(() => {
-                console.log('Closing...');
+                console.log('Closing WebApp...');
                 tg.close();
             }, 2000);
         } else {
@@ -473,9 +472,16 @@ async function onAdComplete() {
     } catch (error) {
         console.error('Send error:', error);
         showStatus(`❌ Error: ${error.message}`, 'error');
-        updateProgress('❌ Send failed');
+        updateProgress('❌ Failed to send file');
         watchBtn.disabled = false;
         watchBtn.textContent = '🔄 Try Again';
+        
+        // Show detailed error
+        if (error.message.includes('404')) {
+            updateProgress('❌ Endpoint not found. Check worker deployment.');
+        } else if (error.message.includes('500')) {
+            updateProgress('❌ Server error. Check worker logs.');
+        }
     } finally {
         loader.style.display = 'none';
     }
@@ -484,6 +490,12 @@ async function onAdComplete() {
 // ===== ERROR HANDLERS =====
 window.addEventListener('error', (e) => {
     console.error('Global error:', e.error);
+});
+
+window.addEventListener('beforeunload', () => {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
 });
 
 console.log('✓ Script loaded');
